@@ -12,17 +12,12 @@ import os
 st.set_page_config(page_title="Klasifikasi Sampah - TensorFlow", layout="wide")
 
 @st.cache_resource
-def load_tf_model():
-    """Load trained TensorFlow model"""
-    model_path = "D:\\ML & DL\\Sampah\\final.h5"
-    if not os.path.exists(model_path):
-        st.error(f"Model tidak ditemukan di {model_path}. Silakan upload model terlebih dahulu.")
-        return None
+def load_tf_model_from_path(model_path):
+    """Load trained TensorFlow model from given path"""
     return load_model(model_path)
 
 def preprocess_image(img, target_size=(224, 224)):
     """Preprocess image for model prediction"""
- 
     img = cv2.resize(img, target_size)
 
     if len(img.shape) == 2:
@@ -56,23 +51,30 @@ def display_prediction(prediction, class_names):
 def main():
     st.title("Klasifikasi Sampah Organik dan Anorganik")
     st.write("Aplikasi ini mengklasifikasikan jenis sampah menggunakan model TensorFlow")
-    
+
     class_names = ['Organik', 'Anorganik']
+
+    st.sidebar.header("📦 Upload Model (.h5)")
+    uploaded_model = st.sidebar.file_uploader("Upload model TensorFlow", type=["h5"])
     
-    if 'model_path' in st.session_state:
-        model = load_model(st.session_state['model_path'])
-        st.sidebar.success("Menggunakan model yang diupload")
+    if uploaded_model is not None:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".h5") as tmp_model:
+            tmp_model.write(uploaded_model.read())
+            tmp_model_path = tmp_model.name
+        model = load_tf_model_from_path(tmp_model_path)
+        st.sidebar.success("Model berhasil dimuat dari upload!")
     else:
-        model = load_tf_model()
-        if model is None:
-            st.warning("Model tidak ditemukan. Silakan upload model terlebih dahulu.")
+        st.sidebar.warning("Model belum diupload. Menggunakan model default (jika ada).")
+        default_model_path = "final.h5"
+        if os.path.exists(default_model_path):
+            model = load_tf_model_from_path(default_model_path)
+        else:
+            st.error("Tidak ada model yang tersedia. Silakan upload model terlebih dahulu.")
             return
     
- 
     uploaded_file = st.file_uploader("Upload gambar sampah", type=["jpg", "jpeg", "png"])
         
     if uploaded_file is not None:
-
         file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
         img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
             
@@ -82,7 +84,6 @@ def main():
             with st.spinner("Memproses..."):
                 prediction = predict_image(model, img)
                 display_prediction(prediction, class_names)
-    
 
 if __name__ == "__main__":
     main()
