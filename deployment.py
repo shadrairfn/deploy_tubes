@@ -13,11 +13,10 @@ st.set_page_config(page_title="Klasifikasi Sampah - TensorFlow", layout="wide")
 
 @st.cache_resource
 def load_tf_model_from_path(model_path):
-    """Load trained TensorFlow model from given path"""
     return load_model(model_path)
 
 def preprocess_image(img, target_size=(224, 224)):
-    """Preprocess image for model prediction"""
+
     img = cv2.resize(img, target_size)
 
     if len(img.shape) == 2:
@@ -32,13 +31,11 @@ def preprocess_image(img, target_size=(224, 224)):
     return img
 
 def predict_image(model, img):
-    """Make prediction using the model"""
     processed_img = preprocess_image(img)
     prediction = model.predict(processed_img)
     return prediction
 
 def display_prediction(prediction, class_names):
-    """Display prediction results"""
     class_idx = np.argmax(prediction[0])
     confidence = float(prediction[0][class_idx])
     
@@ -81,7 +78,7 @@ def main():
         st.image(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), caption="Gambar yang diupload", use_column_width=True)
             
         if st.button("Klasifikasi"):
-            with st.spinner("Memproses..."):
+            with st.spinner("Proses"):
                 prediction = predict_image(model, img)
                 display_prediction(prediction, class_names)
 
